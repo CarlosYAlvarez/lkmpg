@@ -1,0 +1,106 @@
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/cdev.h>
+
+#include "mychardev_common.h"
+
+/* Meta Information */
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Johannes 4 GNU/Linux");
+MODULE_DESCRIPTION("An example for registering device numbers for character devices");
+
+// Device number assigned to this character device
+static dev_t dev_num = MKDEV(MAJOR_NUM, MINOR_NUM);
+
+// Character device object to register with the kernel
+static struct cdev mychardev =
+{
+    .owner = THIS_MODULE,
+};
+
+// Define the file operations structure
+struct file_operations fops = 
+{
+    .owner = THIS_MODULE,
+    .open = device_open,
+    .release = device_close
+};
+
+static int __init my_init(void)
+{
+    printk("---------------------- Mod Init ----------------------\n");
+    printk("Initializing module: %s\n", mychardev.owner->name);
+
+    // how many devices the cdev object should handle, starting from the dev_num base
+    unsigned int num_of_dev = 1;
+
+    /************************************
+     * Allocate a range of device numbers
+     ************************************/
+
+    // Register the device. Creates new entry insidte file: /proc/devices
+    if(register_chrdev_region(dev_num, RESERVED_CNT, DRIVER_NAME) < 0)
+    {
+		printk("%s - Error regiserting device number!\n", DRIVER_NAME);
+		return -1;
+	}
+
+    /****************************************************************************
+     * Initialize a cdev object, linking it to the file operations for the device
+     ****************************************************************************/
+
+    // Setup the char device we want to use
+    cdev_init(&mychardev, &fops);
+
+    // num_of_dev should not exceed RESERVED_CNT
+    if(num_of_dev > RESERVED_CNT)
+    {
+        printk("%s - Error attempting to handle more devices than reserved!\n", DRIVER_NAME);
+        return -1;
+    }
+
+    /*****************************************************************************
+     * Register the cdev object with the kernel, associating it with the allocated
+     * device numbers
+     *****************************************************************************/
+
+    if(cdev_add(&mychardev, dev_num, num_of_dev) < 0)
+    {
+        printk("Error: Could not add cdev\n");
+        unregister_chrdev_region(dev_num, num_of_dev);
+        return -1;
+    }
+
+    printk("Successfully registered device %s: Major-%u Minor-%u\n", DRIVER_NAME, MAJOR_NUM, MINOR_NUM);
+    printk("\tCreated entry under: /proc/devices\n");
+
+    printk("Successfully initialized module\n");
+    printk("\tCreated entry under: /proc/modules\n\n");
+
+    printk("Manually create a device file: sudo mknod /dev/<devNodeName> c %u %u\n", MAJOR_NUM, MINOR_NUM);
+
+    printk("------------------------------------------------------\n");
+    return 0;   
+}
+
+static void __exit my_exit(void)
+{
+    printk("---------------------- Mod Exit ----------------------\n");
+    printk("Removing module: %s\n", mychardev.owner->name);
+
+    // how many devices the cdev object should handle, starting from the dev_num base
+    unsigned int num_of_dev = 1;
+
+    unregister_chrdev_region(dev_num, num_of_dev);
+
+    cdev_del(&mychardev);
+
+    printk("Successfully un-registered Device number %u %u\n", MAJOR_NUM, MINOR_NUM);
+    printk("------------------------------------------------------\n");
+}
+
+module_init(my_init);
+module_exit(my_exit);
+

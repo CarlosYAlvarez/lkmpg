@@ -25,8 +25,8 @@ struct ioctl_arg {
 #define IOCTL_VAL_MAXNR 3
 #define DRIVER_NAME "ioctltest"
 
-static unsigned int test_ioctl_major = 0;
-static unsigned int num_of_dev = 1;
+static unsigned int MAJOR_NUM = 0;
+static unsigned int RESERVED_CNT = 1; // The number of consecutive device numbers to be reserved in the kernel
 static struct cdev test_ioctl_cdev;
 static int ioctl_num = 0;
 
@@ -35,8 +35,13 @@ struct test_ioctl_data {
     rwlock_t lock;
 };
 
-static long test_ioctl_ioctl(struct file *filp, unsigned int cmd,
-                             unsigned long arg)
+/*
+ * Provides custom IOCTL commands for user-space interaction.
+ * 
+ * @param cmd - The ioctl number. This encodes the major device number, the type of the ioctl,
+ *              the command, and the type of the parameter
+ */
+static long test_ioctl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
     struct test_ioctl_data *ioctl_data = filp->private_data;
     int retval = 0;
@@ -86,9 +91,14 @@ done:
     return retval;
 }
 
-static ssize_t test_ioctl_read(struct file *filp, char __user *buf,
-                               size_t count, loff_t *f_pos)
+/*
+ * The test_ioctl_read function is called when a user-space application attempts to read data from
+ * the character device associated with the driver. Specifically, it is invoked when the read()
+ * system call is used on the device file (e.g., /dev/ioctltest).
+ */
+static ssize_t test_ioctl_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
+    pr_alert("%s call.\n", __func__);
     struct test_ioctl_data *ioctl_data = filp->private_data;
     unsigned char val;
     int retval;
@@ -151,38 +161,63 @@ static struct file_operations fops = {
 
 static int __init ioctl_init(void)
 {
+    printk("---------------------- Mod Init ----------------------\n");
+    printk("Initializing module: %s\n", THIS_MODULE->name);
+
     dev_t dev;
     int alloc_ret = -1;
     int cdev_ret = -1;
-    alloc_ret = alloc_chrdev_region(&dev, 0, num_of_dev, DRIVER_NAME);
+    
+    /************************************
+     * Allocate a range of device numbers
+     ************************************/
+
+    // Register the device, Creates new entry insidte file: /proc/devices
+    alloc_ret = alloc_chrdev_region(&dev, 0, RESERVED_CNT, DRIVER_NAME);
 
     if (alloc_ret)
         goto error;
 
-    test_ioctl_major = MAJOR(dev);
+    MAJOR_NUM = MAJOR(dev);
+
+    /****************************************************************************
+     * Initialize a cdev object, linking it to the file operations for the device
+     ****************************************************************************/
+
+    // Setup the char device we want to use
     cdev_init(&test_ioctl_cdev, &fops);
-    cdev_ret = cdev_add(&test_ioctl_cdev, dev, num_of_dev);
+
+    /*****************************************************************************
+     * Register the cdev object with the kernel, associating it with the allocated
+     * device numbers
+     *****************************************************************************/
+    cdev_ret = cdev_add(&test_ioctl_cdev, dev, RESERVED_CNT);
 
     if (cdev_ret)
         goto error;
 
-    pr_alert("%s driver(major: %d) installed.\n", DRIVER_NAME,
-             test_ioctl_major);
+    printk("Successfully registered device %s: Major-%u Minor-%u\n", DRIVER_NAME, MAJOR(dev), MINOR(dev));
+    printk("\tCreated %s entry under: /proc/devices\n", DRIVER_NAME);
+    printk("------------------------------------------------------\n");
+
     return 0;
+
 error:
     if (cdev_ret == 0)
         cdev_del(&test_ioctl_cdev);
     if (alloc_ret == 0)
-        unregister_chrdev_region(dev, num_of_dev);
+        unregister_chrdev_region(dev, RESERVED_CNT);
+
+    printk("------------------------------------------------------\n");
     return -1;
 }
 
 static void __exit ioctl_exit(void)
 {
-    dev_t dev = MKDEV(test_ioctl_major, 0);
+    dev_t dev = MKDEV(MAJOR_NUM, 0);
 
     cdev_del(&test_ioctl_cdev);
-    unregister_chrdev_region(dev, num_of_dev);
+    unregister_chrdev_region(dev, RESERVED_CNT);
     pr_alert("%s driver removed.\n", DRIVER_NAME);
 }
 

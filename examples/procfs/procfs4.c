@@ -96,11 +96,13 @@ static int __init procfs4_init(void)
 {
     struct proc_dir_entry *entry;
 
-    entry = proc_create(PROC_NAME, 0, NULL, &my_file_ops);
+    entry = proc_create(PROC_NAME, 0666, NULL, &my_file_ops);
     if (entry == NULL) {
-        pr_debug("Error: Could not initialize /proc/%s\n", PROC_NAME);
+        pr_info("Error: Could not initialize /proc/%s\n", PROC_NAME);
         return -ENOMEM;
     }
+
+    pr_info("Created /proc/%s\n", PROC_NAME);
 
     return 0;
 }
@@ -108,7 +110,7 @@ static int __init procfs4_init(void)
 static void __exit procfs4_exit(void)
 {
     remove_proc_entry(PROC_NAME, NULL);
-    pr_debug("/proc/%s removed\n", PROC_NAME);
+    pr_info("/proc/%s removed\n", PROC_NAME);
 }
 
 module_init(procfs4_init);

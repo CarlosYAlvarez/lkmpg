@@ -19,24 +19,30 @@
 #define PROCFS_MAX_SIZE 2048UL
 #define PROCFS_ENTRY_FILENAME "buffer2k"
 
+/* This structure hold information about the /proc file */
 static struct proc_dir_entry *our_proc_file;
+
+/* The buffer used to store character for this module */
 static char procfs_buffer[PROCFS_MAX_SIZE];
+
+/* The size of the buffer */
 static unsigned long procfs_buffer_size = 0;
 
+/* This function is called then the /proc file is read */
 static ssize_t procfs_read(struct file *filp, char __user *buffer,
-                           size_t length, loff_t *offset)
+                           size_t buffer_length, loff_t *offset)
 {
     if (*offset || procfs_buffer_size == 0) {
-        pr_debug("procfs_read: END\n");
+        pr_info("procfs_read: END\n");
         *offset = 0;
         return 0;
     }
-    procfs_buffer_size = min(procfs_buffer_size, length);
+    procfs_buffer_size = min(procfs_buffer_size, buffer_length);
     if (copy_to_user(buffer, procfs_buffer, procfs_buffer_size))
         return -EFAULT;
     *offset += procfs_buffer_size;
 
-    pr_debug("procfs_read: read %lu bytes\n", procfs_buffer_size);
+    pr_info("procfs_read: read %lu bytes\n", procfs_buffer_size);
     return procfs_buffer_size;
 }
 static ssize_t procfs_write(struct file *file, const char __user *buffer,
@@ -47,16 +53,20 @@ static ssize_t procfs_write(struct file *file, const char __user *buffer,
         return -EFAULT;
     *off += procfs_buffer_size;
 
-    pr_debug("procfs_write: write %lu bytes\n", procfs_buffer_size);
+    pr_info("procfs_write: write %lu bytes\n", procfs_buffer_size);
     return procfs_buffer_size;
 }
 static int procfs_open(struct inode *inode, struct file *file)
 {
+    pr_info("procfs_open\n");
+
     try_module_get(THIS_MODULE);
     return 0;
 }
 static int procfs_close(struct inode *inode, struct file *file)
 {
+    pr_info("procfs_close\n");
+
     module_put(THIS_MODULE);
     return 0;
 }
@@ -79,24 +89,22 @@ static const struct file_operations file_ops_4_our_proc_file = {
 
 static int __init procfs3_init(void)
 {
-    our_proc_file = proc_create(PROCFS_ENTRY_FILENAME, 0644, NULL,
-                                &file_ops_4_our_proc_file);
+    our_proc_file = proc_create(PROCFS_ENTRY_FILENAME, 0644, NULL, &file_ops_4_our_proc_file);
     if (our_proc_file == NULL) {
-        pr_debug("Error: Could not initialize /proc/%s\n",
-                 PROCFS_ENTRY_FILENAME);
+        pr_info("Error: Could not initialize /proc/%s\n", PROCFS_ENTRY_FILENAME);
         return -ENOMEM;
     }
     proc_set_size(our_proc_file, 80);
     proc_set_user(our_proc_file, GLOBAL_ROOT_UID, GLOBAL_ROOT_GID);
 
-    pr_debug("/proc/%s created\n", PROCFS_ENTRY_FILENAME);
+    pr_info("/proc/%s created\n", PROCFS_ENTRY_FILENAME);
     return 0;
 }
 
 static void __exit procfs3_exit(void)
 {
     remove_proc_entry(PROCFS_ENTRY_FILENAME, NULL);
-    pr_debug("/proc/%s removed\n", PROCFS_ENTRY_FILENAME);
+    pr_info("/proc/%s removed\n", PROCFS_ENTRY_FILENAME);
 }
 
 module_init(procfs3_init);

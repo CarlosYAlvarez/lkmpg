@@ -1,3 +1,12 @@
+# The format of this should be:
+#     obj-m += <module_name>.o # Create a module named <module_name>.ko using the following files:
+#     <module_name>-objs += fileOne.o
+#     <module_name>-objs += fileTwo.o
+#     etc....
+#
+# Can also just do:
+#     obj-m += <file_name>.o # Create a module with the same name as the file using the specified file.
+
 obj-m += hello-1.o
 obj-m += hello-2.o
 obj-m += hello-3.o

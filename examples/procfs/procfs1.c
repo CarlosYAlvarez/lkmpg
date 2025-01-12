@@ -16,22 +16,30 @@
 
 static struct proc_dir_entry *our_proc_file;
 
-static ssize_t procfile_read(struct file *file_pointer, char __user *buffer,
-                             size_t buffer_length, loff_t *offset)
+static ssize_t procfile_read(struct file *file_pointer, char __user *buffer, size_t buffer_length, loff_t *offset)
 {
     char s[13] = "HelloWorld!\n";
-    int len = sizeof(s);
-    ssize_t ret = len;
+    int s_size = sizeof(s);
 
-    if (*offset >= len || copy_to_user(buffer, s, len)) {
-        pr_info("copy_to_user failed\n");
-        ret = 0;
-    } else {
+    // to, from, size
+    if (*offset >= s_size)
+    {
+        return 0;
+    }
+    else
+    {
+        size_t bytes_not_coppied = copy_to_user(buffer, s, s_size);
+
+        if(bytes_not_coppied != 0)
+        {
+            pr_info("Failed to coppy %lu bytes\n", bytes_not_coppied);
+        }
+
         pr_info("procfile read %s\n", file_pointer->f_path.dentry->d_name.name);
-        *offset += len;
+        *offset += s_size;
     }
 
-    return ret;
+    return s_size;
 }
 
 #ifdef HAVE_PROC_OPS
