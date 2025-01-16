@@ -28,8 +28,8 @@ data_type:
 */
 
 #define IOC_MAGIC '\x66'
-#define IOCTL_VALSET _IOW(IOC_MAGIC, 0, struct ioctl_arg) // Sets a value in the kernel using struct ioctl_arg
-#define IOCTL_VALGET _IOR(IOC_MAGIC, 1, struct ioctl_arg) // Gets a value from the kernel into struct ioctl_arg
+#define IOCTL_VALSET _IOW(IOC_MAGIC,     0, struct ioctl_arg) // Sets a value in the kernel using struct ioctl_arg
+#define IOCTL_VALGET _IOR(IOC_MAGIC,     1, struct ioctl_arg) // Gets a value from the kernel into struct ioctl_arg
 #define IOCTL_VALGET_NUM _IOR(IOC_MAGIC, 2, int) // Gets a plain integer from the kernel
 #define IOCTL_VALSET_NUM _IOW(IOC_MAGIC, 3, int) // Sets an integer value in the kernel
 

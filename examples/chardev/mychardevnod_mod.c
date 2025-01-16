@@ -52,7 +52,14 @@ static int __init my_init(void)
     // how many devices the cdev object should handle, starting from the dev_num base
 
     /****************************************************************************************
-     * Allocate a range of device numbers
+     * 1. Allocate/Register a range of device numbers. It does not deal with actual device
+     * structure or file operations; its role is to associate a name with a device numbers
+     * and register them with the kernel.
+     *     - What does it mean to "register them with the kernel"?
+     *       A: Informaing the Linux kernel about the existence of a particular range of
+     *          device numbers that are associated with a char device. Basically tells
+     *          the kernel "These device numbers (major/minor) are reserved for a specific
+     *          driver".
      * 
      * register_chrdev_region(dev_t from, unsigned int count, const char *name):
      *      Use WHEN YOU KNOW the major number you want to assign to your char device.
@@ -88,6 +95,7 @@ static int __init my_init(void)
      ****************************************************************************************/
 
     // Register the device. Creates new entry insidte file: /proc/devices
+    // This will contain the driver name plus the Major Number
     if(register_chrdev_region(dev_num, RESERVED_CNT, DRIVER_NAME) < 0)
     {
 		printk("%s - Error regiserting device number!\n", DRIVER_NAME);
@@ -95,7 +103,15 @@ static int __init my_init(void)
 	}
 
     /****************************************************************************
-     * Initialize a cdev object, linking it to the file operations for the device
+     * 2.0 cdev_init() + cdev_add()
+     *     After these are called, a char device will be fully registerd and
+     *     functional in the kernel however, there will be no corresponding device
+     *     file in /dev (until device_create() or mknod are called), so user-space
+     *     applications cannot acces or interact with the device.
+     ****************************************************************************/
+
+    /****************************************************************************
+     * 2.1 Initialize a cdev object, linking it to the file operations for the device
      ****************************************************************************/
 
     // Setup the char device we want to use
@@ -109,7 +125,7 @@ static int __init my_init(void)
     }
 
     /*****************************************************************************
-     * Register the cdev object with the kernel, associating it with the allocated
+     * 2.2 Register the cdev object with the kernel, associating it with the allocated
      * device numbers
      *****************************************************************************/
 
@@ -124,7 +140,7 @@ static int __init my_init(void)
     printk("\tCreated entry under: /proc/devices\n");
 
     /********************
-     * Create a sys class
+     * 3.1 Create a sys class
      ********************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
@@ -148,7 +164,7 @@ static int __init my_init(void)
     printk("Created entry: /sys/class/%s\n", DRIVER_CLASS);
 
     /********************
-     * Create a node
+     * 3.2 Create a node
      ********************/
 
     // Creates entry: /dev/Mychar_Node
