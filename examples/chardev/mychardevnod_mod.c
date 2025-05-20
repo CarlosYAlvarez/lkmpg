@@ -167,10 +167,12 @@ static int __init my_init(void)
      * 3.2 Create a node
      ********************/
 
-    // Creates entry: /dev/Mychar_Node
+    // Creates entry: /sys/class/DRIVER_CLASS/DRIVER_NODE.
+    // User-space utilities like udev monitor sysfs to detect new devices and
+    // dynamically create the corresponding /dev nodes: /dev/Mychar_Node
     device_create(my_class, NULL, dev_num, NULL, DRIVER_NODE);
     printk("Successfully created device node\n");
-    printk("Created entry: /dev/%s\n", DRIVER_NODE);
+    printk("Created entry: /sys/class/%s/%s and /dev/%s\n", DRIVER_CLASS, DRIVER_NODE, DRIVER_NODE);
 
     printk("Successfully initialized module\n");
     printk("\tCreated entry under: /proc/modules\n");

@@ -30,6 +30,7 @@ int device_open(struct inode* inode, struct file* file)
 
     // If file is not oppened (NOT_USED), set to EXCLUSIVE_OPEN
     // if arg1 == arg2; then set arg1 to arg3 AND Return arg2 else return arg1
+    // Compare and Swap, prevent concurrent access to shared resources
     if (atomic_cmpxchg(&already_open, CDEV_NOT_USED, CDEV_EXCLUSIVE_OPEN))
         return -EBUSY;
 

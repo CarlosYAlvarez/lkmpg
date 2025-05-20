@@ -26,6 +26,8 @@ static int machine_crank_thread(void *arg)
 
 static int machine_flywheel_spinup_thread(void *arg)
 {
+    // This thread will run first since it was started before the crank_thread,
+    // but it will wait for the crank_comp thread to complete before continuing
     wait_for_completion(&crank_comp);
 
     pr_info("Flywheel spins up\n");
@@ -45,9 +47,19 @@ static int __init completions_init(void)
 
     pr_info("completions example\n");
 
+    /*
+     * Initialize two completion variables. These will be used to signal when each
+     * thread completes
+     * 
+     * init_completion():
+     * - Sets up a struct completion so it can be used for signaling between threads.
+     * - Ensures the completion starts in an "incomplete" state (not yet signaled).
+     * - Required before calling wait_for_completion() or complete().
+     */
     init_completion(&crank_comp);
     init_completion(&flywheel_comp);
 
+    // The thread created will start in the sleeping TASK_INTERRUPTABLE state
     crank_thread = kthread_create(machine_crank_thread, NULL, "KThread Crank");
     if (IS_ERR(crank_thread))
         goto ERROR_THREAD_1;
@@ -57,6 +69,7 @@ static int __init completions_init(void)
     if (IS_ERR(flywheel_thread))
         goto ERROR_THREAD_2;
 
+    // Chane the thread's state to TASK_RUNNING, allowing it to be scheduled by the CPU
     wake_up_process(flywheel_thread);
     wake_up_process(crank_thread);
 

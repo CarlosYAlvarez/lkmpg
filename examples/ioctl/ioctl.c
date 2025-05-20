@@ -202,7 +202,7 @@ static int __init ioctl_init(void)
     printk("Successfully initialized module\n");
     printk("\tCreated entry under: /proc/modules\n\n");
 
-    printk("Manually create a device file: sudo mknod /dev/<devNodeName> c %u %u\n", MAJOR(dev), MINOR(dev));
+    printk("Manually create a device file: sudo mknod /dev/%s c %u %u\n", DRIVER_NAME, MAJOR(dev), MINOR(dev));
 
     printk("------------------------------------------------------\n");
 

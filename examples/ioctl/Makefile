@@ -1,7 +1,11 @@
 MODULE_NAME_ONE = ioctlMod
+MODULE_NAME_TWO = chardev2Mod
 
 obj-m += $(MODULE_NAME_ONE).o
 $(MODULE_NAME_ONE)-objs += ioctl.o
+
+obj-m += $(MODULE_NAME_TWO).o
+$(MODULE_NAME_TWO)-objs += chardev2.o
 
 PWD := $(CURDIR)
 
@@ -13,7 +17,9 @@ endif
 all:
 	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 	gcc -o ioctl_main ioctl_main.c
+	gcc -o userspace_ioctl userspace_ioctl.c
 
+.PHONY: clean
 clean:
 	$(MAKE) -C /lib/modules/$(shell uname -r)/build CC=$(CC) M=$(PWD) clean
 	$(RM) other/cat_noblock *.plist
