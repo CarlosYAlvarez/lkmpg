@@ -1,12 +1,12 @@
-MODULE_NAME_ONE = MyCharDevMod
-MODULE_NAME_TWO = MyCharDevModNod
+MODULE_NAME_ONE = CharDev-1
+MODULE_NAME_TWO = CharDev-2
 
 obj-m += $(MODULE_NAME_ONE).o
-$(MODULE_NAME_ONE)-objs += mychardev_mod.o
+$(MODULE_NAME_ONE)-objs += chardev-1.o
 $(MODULE_NAME_ONE)-objs += mychardev_common.o
 
 obj-m += $(MODULE_NAME_TWO).o
-$(MODULE_NAME_TWO)-objs += mychardevnod_mod.o
+$(MODULE_NAME_TWO)-objs += chardev-2.o
 $(MODULE_NAME_TWO)-objs += mychardev_common.o
 
 PWD := $(CURDIR)

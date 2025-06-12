@@ -54,6 +54,21 @@ static struct file_operations chardev_fops = {
 
 static int __init chardev_init(void)
 {
+    // How to know what MAJOR Number is available for assignment?
+    // 1. See https://www.kernel.org/doc/Documentation/admin-guide/devices.txt
+    //    and pick one not used. Downside is that you will never
+    //    be sure if the number you picked will be assigned later
+    // 2. Major numbers set to 0 for dynamic allocation. Downside
+    //    is tha tyou cannot make a device file in advance, since
+    //    you do not know what the major number will be.
+    //    2.a You can print the MAJOR number and then make the
+    //        device file by hand (mknod /dev/coffee c 12 2)
+    //    2.b Instead of printing it, see the new entry created
+    //        within /proc/devices. Read or write a script that
+    //        reads the major number from here and make the device
+    //        file by hand.
+    //    2.c Instead of doing either of the two above have the
+    //        driver make the device file using device_create(...).
     major = register_chrdev(0, DEVICE_NAME, &chardev_fops);
 
     if (major < 0) {

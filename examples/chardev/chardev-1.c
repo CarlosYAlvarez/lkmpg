@@ -38,10 +38,10 @@ static int __init my_init(void)
 
     /****************************************************************************************
      * 1. Allocate/Register a range of device numbers. It does not deal with actual device
-     * structure or file operations; its role is to associate a name with a device numbers
+     * structure or file operations; its role is to associate a name with device numbers
      * and register them with the kernel.
      *     - What does it mean to "register them with the kernel"?
-     *       A: Informaing the Linux kernel about the existence of a particular range of
+     *       A: Informing the Linux kernel about the existence of a particular range of
      *          device numbers that are associated with a char device. Basically tells
      *          the kernel "These device numbers (major/minor) are reserved for a specific
      *          driver".
